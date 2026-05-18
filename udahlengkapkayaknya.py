@@ -172,6 +172,51 @@ def lihat_history():
     print(f"  Total Pendapatan : Rp {total_pendapatan:,}")
     cetak_separator()
 
+def cari_kendaraan():
+    print("\n" + "="*40)
+    print("        CARI KENDARAAN")
+    cetak_separator()
+
+    keyword = input("Masukkan Plat Nomor (boleh sebagian): ").strip().upper()
+
+    # Cari di parkiran aktif
+    hasil_aktif = [(id_p, v) for id_p, v in data_parkir.items() if keyword in v["plat"]]
+
+    # Cari di history
+    hasil_history = [r for r in history_parkir if keyword in r["plat"]]
+
+    if not hasil_aktif and not hasil_history:
+        print(f"\n  [-] Plat '{keyword}' tidak ditemukan.")
+        cetak_separator()
+        return
+
+    # Tampilkan yang masih parkir
+    if hasil_aktif:
+        print(f"\n  [>>] Sedang Parkir:")
+        cetak_separator("-")
+        print(f"  {'ID':^8} {'Plat':^10} {'Jenis':^6} {'Masuk':^10} {'Durasi Skrg':^12}")
+        cetak_separator("-")
+        for id_p, v in hasil_aktif:
+            sekarang = datetime.datetime.now()
+            menit    = max(1, int((sekarang - v["waktu_masuk"]).total_seconds() / 60))
+            print(f"  {id_p:^8} {v['plat']:^10} {v['kategori'].capitalize():^6} "
+                  f"{v['waktu_masuk'].strftime('%H:%M:%S'):^10} {format_durasi(menit):^12}")
+
+    # Tampilkan riwayat
+    if hasil_history:
+        print(f"\n  [>>] Riwayat:")
+        cetak_separator("-")
+        print(f"  {'Plat':^10} {'Jenis':^6} {'Masuk':^10} {'Keluar':^10} {'Durasi':^10} {'Bayar':>12}")
+        cetak_separator("-")
+        for r in hasil_history:
+            print(f"  {r['plat']:^10} {r['kategori'].capitalize():^6} "
+                  f"{r['waktu_masuk'].strftime('%H:%M:%S'):^10} "
+                  f"{r['waktu_keluar'].strftime('%H:%M:%S'):^10} "
+                  f"{format_durasi(r['durasi_menit']):^10} "
+                  f"Rp {r['total_bayar']:>8,}")
+
+    cetak_separator()
+
 # ─── MAIN ─────────────────────────────────────────────────────────────────────
 def main():
     while True:
@@ -182,15 +227,17 @@ def main():
         print("  2. Kendaraan Keluar")
         print("  3. Status Parkiran")
         print("  4. Riwayat Parkiran")
-        print("  5. Keluar Aplikasi")
+        print("  5. Cari Kendaraan")
+        print("  6. Keluar Aplikasi")
         cetak_separator()
-        opsi = input("  Pilih menu (1-5): ").strip()
+        opsi = input("  Pilih menu (1-6): ").strip()
 
         if   opsi == "1": kendaraan_masuk()
         elif opsi == "2": kendaraan_keluar()
         elif opsi == "3": lihat_status()
         elif opsi == "4": lihat_history()
-        elif opsi == "5":
+        elif opsi == "5": cari_kendaraan()
+        elif opsi == "6":
             print("\n  Terima kasih! Sampai jumpa o/")
             break
         else:
