@@ -7,7 +7,7 @@ def kendaraan_masuk():
     # placeholder
     print("\n--- KENDARAAN MASUK ---")
     # 1. Generate ID Unik
-    id_parkir = str(uuid.uuid4())[:8].upper()
+    id_parkir = str(uuid.uuid4())[:5].upper()
     
     # 2. Input Kategori dan Plat Nomor
     plat_nomor = input("Masukkan Plat Nomor: ")
