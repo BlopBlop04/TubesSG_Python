@@ -42,8 +42,7 @@ class ParkiranDigital(App):
         border: solid $primary;
         padding: 1;
         margin: 0 0 1 0;
-        height: auto;
-        min-height: 11; /* Mengunci tinggi minimum agar ruang input plat selalu aman */
+        height: 15; /* Diubah ke fixed height agar ruang muat untuk input selalu aman */
     }
 
     .hidden {
@@ -56,7 +55,7 @@ class ParkiranDigital(App):
         background: $boost;
         margin-top: 1;
         padding: 1;
-        height: 10;
+        height: 13;
         color: $text;
     }
 
@@ -100,6 +99,11 @@ class ParkiranDigital(App):
     Label {
         margin-bottom: 1;
     }
+    
+    /* ── JARAK INPUT MASUK ── */
+    #input-plat {
+        margin-top: 1;
+    }
     """
 
     # ─── HELPER ───────────────────────────────────────────────────
@@ -135,16 +139,16 @@ class ParkiranDigital(App):
                     yield Button("🚪 Keluar",  variant="error",   id="menu-keluar")
                     yield Button("🔍 Cari",    variant="warning", id="menu-cari")
 
-                # ── FORM MASUK (Menggunakan ScrollableContainer agar anti-clip/anti-potong) ──
-                with ScrollableContainer(id="area-masuk", classes="hidden box"):
+                # ── FORM MASUK ──
+                with Vertical(id="area-masuk", classes="hidden box"):
                     yield Label("[b]KENDARAAN MASUK[/]")
                     yield Label("Pilih Tipe Kendaraan:")
                     with Horizontal(id="container-tipe"):
                         yield Button("🚗 Mobil", id="pilih-mobil", variant="primary")
                         yield Button("🏍 Motor", id="pilih-motor", variant="success")
-                    yield Label("", id="label-kategori")
+                    # Label tulisan "Terpilihan Mobil..." telah dihapus dan diganti langsung oleh Input di bawah ini
                     yield Input(
-                        placeholder="Masukkan Plat Nomor lalu Enter...",
+                        placeholder="Pilih jenis kendaraan dahulu...",
                         id="input-plat"
                     )
 
@@ -195,8 +199,8 @@ class ParkiranDigital(App):
 
         self.update_slot_bar()
 
-        # Input plat disembunyikan total di awal boot secara aman
-        self.query_one("#input-plat", Input).styles.display = "none"
+        # Logika menyembunyikan input plat secara paksa di awal bermasalah pada terminal kecil, sekarang dihapus.
+        # Kolom input mengikuti visibilitas dari kontainer induknya (#area-masuk).
 
         # Auto-refresh durasi setiap 30 detik
         self.set_interval(30, self.update_tabel_aktif)
@@ -270,8 +274,8 @@ class ParkiranDigital(App):
         if event.button.id == "menu-masuk":
             hide_all_forms()
             self.query_one("#area-masuk").remove_class("hidden")
-            input_plat.styles.display = "none"
-            self.query_one("#label-kategori").update("")
+            input_plat.placeholder = "Pilih jenis kendaraan dahulu..."
+            input_plat.value = ""
             self.kategori_pilihan = ""
             struk.update("Pilih tipe kendaraan lalu masukkan plat nomor.")
 
@@ -298,20 +302,12 @@ class ParkiranDigital(App):
                     f"Slot {self.kategori_pilihan} sudah penuh ({terpakai}/{kapasitas}).\n"
                     f"Tidak bisa menerima kendaraan baru."
                 )
-                self.query_one("#label-kategori").update(
-                    f"[b red]Slot {self.kategori_pilihan} PENUH![/]"
-                )
-                input_plat.styles.display = "none"
+                input_plat.placeholder = f"Slot {self.kategori_pilihan} PENUH!"
+                input_plat.value = ""
                 return
 
-            self.query_one("#label-kategori").update(
-                f"Terpilih: [b]{self.kategori_pilihan}[/]  "
-                f"(Slot tersisa: {kapasitas - terpakai}/{kapasitas})"
-            )
-            
-            # Memunculkan input plat, dipaksa render ulang di layar terminal biasa, lalu tuju fokus.
-            input_plat.styles.display = "block"
-            self.refresh()  
+            # Mengganti placeholder teks input secara dinamis sebagai penunjuk kategori yang dipilih
+            input_plat.placeholder = f"Masukkan Plat {self.kategori_pilihan} lalu Enter..."
             input_plat.focus()
 
     # ─── INPUT SUBMITTED ──────────────────────────────────────────
@@ -339,7 +335,7 @@ class ParkiranDigital(App):
                     event.input.value = ""
                     return
 
-            id_pk       = uuid.uuid4().hex[:8].upper()
+            id_pk       = uuid.uuid4().hex[:3].upper()
             waktu_masuk = datetime.datetime.now()
             terpakai    = self.hitung_slot_terpakai(self.kategori_pilihan)
             sisa        = KAPASITAS[self.kategori_pilihan] - terpakai - 1
@@ -365,8 +361,8 @@ class ParkiranDigital(App):
 
             # Reset form & bersihkan display
             event.input.value = ""
+            event.input.placeholder = "Pilih jenis kendaraan dahulu..."
             self.query_one("#area-masuk").add_class("hidden")
-            event.input.styles.display = "none"
             self.kategori_pilihan = ""
 
         # ── KELUAR ───────────────────────────────────────────────
@@ -411,7 +407,7 @@ class ParkiranDigital(App):
                 f"Keluar      : {waktu_keluar.strftime('%H:%M:%S')}\n"
                 f"Durasi      : {self.format_durasi(menit)}\n"
                 f"[b green]TOTAL BAYAR : Rp {total_bayar:,}[/]\n"
-                f"Terima kasih! Selamat berkendara ^_^"
+                f"Terima kasih! Selamat berkendara ^_^\n"
             )
 
             event.input.value = ""
